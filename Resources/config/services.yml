@@ -1,0 +1,4 @@
+services:
+    get_set_foreign_normalizer:
+        class: thomasbeaujean\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer\GetSetMethodForeignNormalizer
+        arguments: ["@doctrine.orm.entity_manager"]
