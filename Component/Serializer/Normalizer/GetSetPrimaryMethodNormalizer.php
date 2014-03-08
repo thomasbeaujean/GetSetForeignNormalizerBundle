@@ -14,6 +14,7 @@ use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
 class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
 {
     var $doctrine = null;
+    var $deepNormalization = false;
 
     /**
      * Constructor
@@ -31,6 +32,16 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
         if ($this->doctrine === null) {
             throw new \Exception('The class GetSetMethodForeignNormalizer needs the doctrine service in order to normalize, please give it to the constructor');
         }
+    }
+
+    /**
+     * Activate or not the deep normalization (the foreign entities are also normalized)
+     *
+     * @param boolean $deep
+     */
+    public function setDeepNormalization($deep)
+    {
+        $this->deepNormalization = $deep;
     }
 
     /**
@@ -68,32 +79,38 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
 
                         $attributeValue = array();
                         foreach ($attributeValues as $obj) {
-                            $attributeReflectionObject = new \ReflectionObject($obj);
+                            if ($this->deepNormalization) {
+                                //the foreign entities are also normalized using the same conditions (think to ignored properties)
+                                $tempAttribute = $this->normalize($obj);
+                                $attributeValue[] = $tempAttribute;
+                            } else {
+                                $attributeReflectionObject = new \ReflectionObject($obj);
 
-                            $identifiers = $this->doctrine->getManager()->getMetadataFactory()->getMetadataFor($attributeReflectionObject->getName())->getIdentifier();
-                            //the ids to add
-                            $tempAttribute = array();
+                                $identifiers = $this->doctrine->getManager()->getMetadataFactory()->getMetadataFor($attributeReflectionObject->getName())->getIdentifier();
+                                //the ids to add
+                                $tempAttribute = array();
 
-                            foreach ($identifiers as $identifier) {
-                                $attribute = call_user_func(array($obj, 'get'.ucfirst($identifier)));
-                                //the attribute is itself an object
-                                if (is_object($attribute)) {
-                                    //we look for the ids
-                                    $attributeIdentifierReflectionObject = new \ReflectionObject($attribute);
-                                    $attributeIdentifiers = $this->doctrine->getManager()->getMetadataFactory()->getMetadataFor($attributeIdentifierReflectionObject->getName())->getIdentifier();
+                                foreach ($identifiers as $identifier) {
+                                    $attribute = call_user_func(array($obj, 'get'.ucfirst($identifier)));
+                                    //the attribute is itself an object
+                                    if (is_object($attribute)) {
+                                        //we look for the ids
+                                        $attributeIdentifierReflectionObject = new \ReflectionObject($attribute);
+                                        $attributeIdentifiers = $this->doctrine->getManager()->getMetadataFactory()->getMetadataFor($attributeIdentifierReflectionObject->getName())->getIdentifier();
 
-                                    foreach ($attributeIdentifiers as $index => $attributeIdentifier) {
-                                         $attributeIdentifierAttribute = call_user_func(array($attribute, 'get'.ucfirst($attributeIdentifier)));//@todo use reflection to know the identifier
-                                         //we add each of the ids
-                                         $tempAttribute[$identifier] = $attributeIdentifierAttribute;
+                                        foreach ($attributeIdentifiers as $index => $attributeIdentifier) {
+                                             $attributeIdentifierAttribute = call_user_func(array($attribute, 'get'.ucfirst($attributeIdentifier)));//@todo use reflection to know the identifier
+                                             //we add each of the ids
+                                             $tempAttribute[$identifier] = $attributeIdentifierAttribute;
+                                        }
+                                    } else {
+                                        //we memorise the array of ids
+                                        $tempAttribute[$identifier] = $attribute;
                                     }
-                                } else {
-                                    //we memorise the array of ids
-                                    $tempAttribute[$identifier] = $attribute;
                                 }
+                                //we add the id to the array of the attribute
+                                $attributeValue[] = $tempAttribute;
                             }
-                            //we add the id to the array of the attribute
-                            $attributeValue[] = $tempAttribute;
                         }
                     } else {
                         $attributeValue = $attributeValue->getId();//@todo use reflection to know the identifier
