@@ -11,7 +11,7 @@ use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
  *
  * @author Thomas Beaujean
  */
-class GetSetMethodForeignNormalizer extends GetSetMethodNormalizer
+class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
 {
     var $doctrine = null;
 
