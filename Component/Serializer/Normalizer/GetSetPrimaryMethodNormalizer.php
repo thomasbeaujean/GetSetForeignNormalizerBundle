@@ -61,7 +61,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
                 if (array_key_exists($attributeName, $this->callbacks)) {
                     $attributeValue = call_user_func($this->callbacks[$attributeName], $attributeValue);
                 }
-                if (null !== $attributeValue && !is_scalar($attributeValue)) {
+                if (null !== $attributeValue && !is_scalar($attributeValue) && !is_array($attributeValue)) {
                     if (get_class($attributeValue) == 'Doctrine\ORM\PersistentCollection') {
                         //memorize the list of persistent collections
                         $attributeValues = $attributeValue;
