@@ -22,6 +22,7 @@ class Configuration implements ConfigurationInterface
     {
         $treeBuilder = new TreeBuilder();
 
+        $rootNode = $treeBuilder->root('get_set_foreign_normalizer', 'array');
 
         return $treeBuilder;
     }
