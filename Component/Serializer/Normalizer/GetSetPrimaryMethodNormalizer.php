@@ -61,6 +61,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
         $attributes = array();
         foreach ($reflectionMethods as $method) {
             if ($this->isGetMethod($method)) {
+
                 $attributeName = lcfirst(substr($method->name, 3));//we sub the set or get
 
                 if (in_array($attributeName, $this->ignoredAttributes)) {
@@ -72,7 +73,12 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
                 if (array_key_exists($attributeName, $this->callbacks)) {
                     $attributeValue = call_user_func($this->callbacks[$attributeName], $attributeValue);
                 }
-                if (null !== $attributeValue && !is_scalar($attributeValue) && !is_array($attributeValue)) {
+
+                if (null !== $attributeValue &&
+                    !is_scalar($attributeValue) &&
+                    !is_array($attributeValue) &&
+                    (get_class($attributeValue) !== 'DateTime')
+                    ) {
                     if (get_class($attributeValue) == 'Doctrine\ORM\PersistentCollection') {
                         //memorize the list of persistent collections
                         $attributeValues = $attributeValue;
@@ -84,12 +90,14 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
                                 $tempAttribute = $this->normalize($obj);
                                 $attributeValue[] = $tempAttribute;
                             } else {
+                                //it is a simple normalization, we just look for the identifiers
                                 $attributeReflectionObject = new \ReflectionObject($obj);
 
                                 $identifiers = $this->doctrine->getManager()->getMetadataFactory()->getMetadataFor($attributeReflectionObject->getName())->getIdentifier();
                                 //the ids to add
                                 $tempAttribute = array();
 
+                                //we look for the multiple identifiers
                                 foreach ($identifiers as $identifier) {
                                     $attribute = call_user_func(array($obj, 'get'.ucfirst($identifier)));
                                     //the attribute is itself an object
@@ -108,15 +116,41 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
                                         $tempAttribute[$identifier] = $attribute;
                                     }
                                 }
+
                                 //we add the id to the array of the attribute
                                 $attributeValue[] = $tempAttribute;
                             }
                         }
                     } else {
-                        $attributeValue = $attributeValue->getId();//@todo use reflection to know the identifier
+                        //@todo use reflection to know the identifier
+                        if (method_exists($attributeValue, 'getId')) {
+                            $attributeValue = $attributeValue->getId();
+                        }
                     }
                 }
+
+                //if the attribute is an array
+                if (is_array($attributeValue)) {
+                    $tempAttributeValue = array();
+
+                    //we have to parse the content
+                    foreach ($attributeValue as $tempValue) {
+                        //to also normalize the objects
+                        if (is_object($tempValue)) {
+                            $tempAttribute = $this->normalize($tempValue);
+                        } else {
+                            $tempAttribute = $tempValue;
+                        }
+
+                        $tempAttributeValue[] = $tempAttribute;
+                    }
+
+                    //update the attribute value with the normalized array
+                    $attributeValue = $tempAttributeValue;
+                }
+
                 $attributes[$attributeName] = $attributeValue;
+
             }
         }
 
