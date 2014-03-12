@@ -15,6 +15,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
 {
     var $doctrine = null;
     var $deepNormalization = false;
+    var $watchDog = 0;//avoid infinite loop
 
     /**
      * Constructor
@@ -45,6 +46,16 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
     }
 
     /**
+     * Set the watchdog
+     *
+     * @param integer $watchDog
+     */
+    public function setWatchDog($watchDog)
+    {
+        $this->watchDog = $watchDog;
+    }
+
+    /**
      * Convert an object using the getter of this one, and if it has some foreign relationship, we use also the id of the foreign objects
      *
      * @param unknown $object  The object to convert
@@ -55,6 +66,9 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
      */
     public function normalize($object, $format = null, array $context = array())
     {
+        //check the watchdog
+        $this->checkWatchDog();
+
         $reflectionObject = new \ReflectionObject($object);
         $reflectionMethods = $reflectionObject->getMethods(\ReflectionMethod::IS_PUBLIC);
 
@@ -171,5 +185,18 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
             3 < strlen($method->name) &&
             0 === $method->getNumberOfRequiredParameters()
         );
+    }
+
+    /**
+     * Check if the watchdog was raised
+     *
+     * @throws \Exception
+     */
+    private function checkWatchDog()
+    {
+        if ($this->watchDog >= 500) {
+            throw new \Exception('The watchdog of '.$this->watchDog.' has been reached. There might be an infinite loop');
+        }
+        $this->watchDog++;
     }
 }
