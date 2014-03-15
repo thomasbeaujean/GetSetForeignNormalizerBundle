@@ -151,7 +151,11 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
                     foreach ($attributeValue as $tempValue) {
                         //to also normalize the objects
                         if (is_object($tempValue)) {
-                            $tempAttribute = $this->normalize($tempValue);
+                            if ($this->deepNormalization) {
+                                $tempAttribute = $this->normalize($tempValue);
+                            } else {
+                                $tempAttribute = $tempValue->getId();
+                            }
                         } else {
                             $tempAttribute = $tempValue;
                         }
