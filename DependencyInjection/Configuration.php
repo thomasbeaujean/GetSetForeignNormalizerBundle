@@ -1,6 +1,6 @@
 <?php
 
-namespace thomasbeaujean\GetSetForeignNormalizerBundle\DependencyInjection;
+namespace tbn\GetSetForeignNormalizerBundle\DependencyInjection;
 
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;

@@ -1,4 +1,4 @@
 services:
     get_set_foreign_normalizer:
-        class: thomasbeaujean\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer\GetSetPrimaryMethodNormalizer
+        class: tbn\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer\GetSetPrimaryMethodNormalizer
         arguments: ["@doctrine"]

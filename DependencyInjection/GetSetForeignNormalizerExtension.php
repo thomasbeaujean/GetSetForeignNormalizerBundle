@@ -1,6 +1,6 @@
 <?php
 
-namespace thomasbeaujean\GetSetForeignNormalizerBundle\DependencyInjection;
+namespace tbn\GetSetForeignNormalizerBundle\DependencyInjection;
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Config\FileLocator;

@@ -5,7 +5,7 @@
         "symfony/class-loader": "2.3.*"
     },
     "autoload": {
-        "psr-0": { "thomasbeaujean\\GetSetForeignNormalizerBundle": "" }
+        "psr-0": { "tbn\\GetSetForeignNormalizerBundle": "" }
     },
-    "target-dir": "thomasbeaujean/GetSetForeignNormalizerBundle"
+    "target-dir": "tbn/GetSetForeignNormalizerBundle"
 }

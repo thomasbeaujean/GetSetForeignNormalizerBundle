@@ -1,6 +1,6 @@
 <?php
 
-namespace thomasbeaujean\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer;
+namespace tbn\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer;
 
 use Symfony\Component\Serializer\Exception\InvalidArgumentException;
 use Symfony\Component\Serializer\Exception\RuntimeException;
