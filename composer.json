@@ -1,7 +1,6 @@
 {
-    "name": "thomasbeaujean/getsetforeignnormalizer-bundle",
+    "name": "tbn/getsetforeignnormalizer-bundle",
     "description": "add the getsetforeignnormalizer service",
-    "version": "dev-master",
     "require-dev": {
         "symfony/class-loader": "2.3.*"
     },
