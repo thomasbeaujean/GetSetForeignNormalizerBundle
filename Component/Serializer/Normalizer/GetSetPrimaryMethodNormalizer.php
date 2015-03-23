@@ -16,6 +16,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
     var $doctrine = null;
     var $deepNormalization = false;
     var $watchDog = 0;//avoid infinite loop
+    var $decamelize = false;
 
     /**
      * Constructor
@@ -66,21 +67,36 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
      */
     public function normalize($data, $format = null, array $context = array())
     {
-        if ($data instanceof \Traversable ) {
-            $normalized = array();
-zdebug('traversable');
-            //parse all data
-            foreach ($data as $index => $row) {
-                $normalized[$index] = $this->normalizeObject($row, $format, $context);
-            }
+        if ($data instanceof \Traversable || is_array($data)) {
+            $normalized = $this->normalizeArray($data, $format, $context);
         } else {
-            zdebug('objec');
-            $normalized = $this->normalizeObject($object, $format, $context);
+            $normalized = $this->normalizeObject($data, $format, $context);
         }
 
         return $normalized;
     }
 
+    /**
+     * Convert an object using the getter of this one, and if it has some foreign relationship, we use also the id of the foreign objects
+     *
+     * @param unknown $object  The object to convert
+     * @param string  $format  Not used here, keeped for compatibility
+     * @param array   $context Not used here, keeped for compatibility
+     *
+     * @return multitype:multitype:multitype:mixed
+     */
+    public function normalizeArray($data, $format = null, array $context = array())
+    {
+        $normalized = array();
+
+        //parse all data
+        foreach ($data as $index => $row) {
+            $normalizedData =$this->normalizeObject($row, $format, $context);
+            $normalized[$index] = $normalizedData;
+        }
+
+        return $normalized;
+    }
 
     /**
      * Convert an object using the getter of this one, and if it has some foreign relationship, we use also the id of the foreign objects
@@ -119,7 +135,7 @@ zdebug('traversable');
                     !is_scalar($attributeValue) &&
                     !is_array($attributeValue) &&
                     (get_class($attributeValue) !== 'DateTime')
-                    ) {
+                ) {
                     if (get_class($attributeValue) == 'Doctrine\ORM\PersistentCollection') {
                         //memorize the list of persistent collections
                         $attributeValues = $attributeValue;
@@ -148,9 +164,9 @@ zdebug('traversable');
                                         $attributeIdentifiers = $this->doctrine->getManager()->getMetadataFactory()->getMetadataFor($attributeIdentifierReflectionObject->getName())->getIdentifier();
 
                                         foreach ($attributeIdentifiers as $index => $attributeIdentifier) {
-                                             $attributeIdentifierAttribute = call_user_func(array($attribute, 'get'.ucfirst($attributeIdentifier)));//@todo use reflection to know the identifier
-                                             //we add each of the ids
-                                             $tempAttribute[$identifier] = $attributeIdentifierAttribute;
+                                            $attributeIdentifierAttribute = call_user_func(array($attribute, 'get'.ucfirst($attributeIdentifier)));//@todo use reflection to know the identifier
+                                            //we add each of the ids
+                                            $tempAttribute[$identifier] = $attributeIdentifierAttribute;
                                         }
                                     } else {
                                         //we memorise the array of ids
@@ -194,12 +210,32 @@ zdebug('traversable');
                     $attributeValue = $tempAttributeValue;
                 }
 
+                //decamelize if requested the attribute name
+                if ($this->decamelize === true) {
+                    $attributeName = $this->decamelize($attributeName);
+                }
+
                 $attributes[$attributeName] = $attributeValue;
 
             }
         }
 
         return $attributes;
+    }
+
+    /**
+     * Decamelize a word
+     *
+     * @param string $word
+     * @return string Decamelized string
+     */
+    function decamelize($word)
+    {
+        return preg_replace_callback(
+            '/(^|[a-z])([A-Z])/',function ($matches) {
+            return strtolower($matches[1].'_').strtolower($matches[2]);},
+            $word
+        );
     }
 
     /**
@@ -229,5 +265,14 @@ zdebug('traversable');
             throw new \Exception('The watchdog of '.$this->watchDog.' has been reached. There might be an infinite loop');
         }
         $this->watchDog++;
+    }
+
+    /**
+     *
+     * @param boolean $decamelize
+     */
+    public function setDecamelize($decamelize)
+    {
+        $this->decamelize = $decamelize;
     }
 }
