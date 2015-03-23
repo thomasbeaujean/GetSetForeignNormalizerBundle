@@ -64,7 +64,34 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
      *
      * @return multitype:multitype:multitype:mixed
      */
-    public function normalize($object, $format = null, array $context = array())
+    public function normalize($data, $format = null, array $context = array())
+    {
+        if ($data instanceof \Traversable ) {
+            $normalized = array();
+zdebug('traversable');
+            //parse all data
+            foreach ($data as $index => $row) {
+                $normalized[$index] = $this->normalizeObject($row, $format, $context);
+            }
+        } else {
+            zdebug('objec');
+            $normalized = $this->normalizeObject($object, $format, $context);
+        }
+
+        return $normalized;
+    }
+
+
+    /**
+     * Convert an object using the getter of this one, and if it has some foreign relationship, we use also the id of the foreign objects
+     *
+     * @param unknown $object  The object to convert
+     * @param string  $format  Not used here, keeped for compatibility
+     * @param array   $context Not used here, keeped for compatibility
+     *
+     * @return multitype:multitype:multitype:mixed
+     */
+    public function normalizeObject($object, $format = null, array $context = array())
     {
         //check the watchdog
         $this->checkWatchDog();
