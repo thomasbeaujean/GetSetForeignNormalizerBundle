@@ -91,11 +91,164 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
 
         //parse all data
         foreach ($data as $index => $row) {
-            $normalizedData =$this->normalizeObject($row, $format, $context);
+            $normalizedData = $this->normalizeObject($row, $format, $context);
             $normalized[$index] = $normalizedData;
         }
 
         return $normalized;
+    }
+
+    /**
+     * Get the object method
+     *
+     * @param unknown $object
+     * @return array
+     */
+    protected function getObjectMethods($object)
+    {
+        $reflectionObject = new \ReflectionObject($object);
+        $reflectionMethods = $reflectionObject->getMethods(\ReflectionMethod::IS_PUBLIC);
+
+        return $reflectionMethods;
+    }
+
+    /**
+     * Get the name of the attribute linked to a get method
+     *
+     * @param string $method
+     * @return string
+     */
+    protected function getMethodAttributeName($method)
+    {
+        $attributeName = lcfirst(substr($method->name, 3));//we sub the set or get
+
+        return $attributeName;
+    }
+
+    /**
+     *
+     * @param unknown $object
+     * @param unknown $attributeName
+     * @return mixed
+     */
+    protected function getAttributeValue($object, $method, $attributeName)
+    {
+        $attributeValue = $method->invoke($object);
+
+        if (array_key_exists($attributeName, $this->callbacks)) {
+            $attributeValue = call_user_func($this->callbacks[$attributeName], $attributeValue);
+        }
+
+        return $attributeValue;
+    }
+
+    /**
+     * Is the attributeValue a doctrine entity or a doctrine collection
+     *
+     * @param $attributeValue
+     * @return boolean
+     */
+    protected function isDoctrineEntity($attributeValue)
+    {
+        $isDoctrineEntity = false;
+
+        if (null !== $attributeValue &&
+            !is_scalar($attributeValue) &&
+            !is_array($attributeValue) &&
+            (get_class($attributeValue) !== 'DateTime')
+        ) {
+            $isDoctrineEntity = true;
+        }
+
+        return $isDoctrineEntity;
+    }
+
+    /**
+     * Is the attribute a doctrine collection
+     *
+     * @param unknown $attribute
+     * @return boolean
+     */
+    protected function isDoctrineCollection($attribute)
+    {
+        $isDoctrineCollection = false;
+
+        if (get_class($attribute) == 'Doctrine\ORM\PersistentCollection') {
+            $isDoctrineCollection = true;
+        }
+
+        return $isDoctrineCollection = false;
+    }
+
+    /**
+     *
+     * @param unknown $collection
+     */
+    protected function normalizeDoctrineCollection($collection)
+    {
+        $attributeValue = array();
+        foreach ($collection as $obj) {
+            if ($this->deepNormalization) {
+                //the foreign entities are also normalized using the same conditions (think to ignored properties)
+                $tempAttribute = $this->normalize($obj);
+                $attributeValue[] = $tempAttribute;
+            } else {
+                //it is a simple normalization, we just look for the identifiers
+                $attributeReflectionObject = new \ReflectionObject($obj);
+
+                $identifiers = $this->doctrine->getManager()->getMetadataFactory()->getMetadataFor($attributeReflectionObject->getName())->getIdentifier();
+                //the ids to add
+                $tempAttribute = array();
+
+                //we look for the multiple identifiers
+                foreach ($identifiers as $identifier) {
+                    $attribute = call_user_func(array($obj, 'get'.ucfirst($identifier)));
+                    //the attribute is itself an object
+                    if (is_object($attribute)) {
+                        //we look for the ids
+                        $attributeIdentifierReflectionObject = new \ReflectionObject($attribute);
+                        $attributeIdentifiers = $this->doctrine->getManager()->getMetadataFactory()->getMetadataFor($attributeIdentifierReflectionObject->getName())->getIdentifier();
+
+                        foreach ($attributeIdentifiers as $index => $attributeIdentifier) {
+                            $attributeIdentifierAttribute = call_user_func(array($attribute, 'get'.ucfirst($attributeIdentifier)));//@todo use reflection to know the identifier
+                            //we add each of the ids
+                            $tempAttribute[$identifier] = $attributeIdentifierAttribute;
+                        }
+                    } else {
+                        //we memorise the array of ids
+                        $tempAttribute[$identifier] = $attribute;
+                    }
+                }
+
+                //we add the id to the array of the attribute
+                $attributeValue[] = $tempAttribute;
+            }
+        }
+
+        return $attributeValue;
+    }
+
+    /**
+     *
+     * @param unknown $entity
+     * @throws \Exception
+     * @return multitype:\tbn\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer\multitype:multitype:mixed
+     */
+    protected function normalizeDoctrineEntity($entity)
+    {
+        //@todo use reflection to know the identifier
+        if ($this->deepNormalization) {
+            //the foreign entities are also normalized using the same conditions (think to ignored properties)
+            $attributeValue = $this->normalize($entity);
+        } else {
+            if (method_exists($entity, 'getId')) {
+                $attributeValue = $entity->getId();
+            } else {
+                throw new \Exception('The normalizeDoctrineEntity did not work, there is a bug');
+            }
+        }
+
+        return $attributeValue;
     }
 
     /**
@@ -112,102 +265,33 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
         //check the watchdog
         $this->checkWatchDog();
 
-        $reflectionObject = new \ReflectionObject($object);
-        $reflectionMethods = $reflectionObject->getMethods(\ReflectionMethod::IS_PUBLIC);
+        $methods = $this->getObjectMethods($object);
 
         $attributes = array();
-        foreach ($reflectionMethods as $method) {
+
+        foreach ($methods as $method) {
+
             if ($this->isGetMethod($method)) {
 
-                $attributeName = lcfirst(substr($method->name, 3));//we sub the set or get
+                $attributeName = $this->getMethodAttributeName($method);
 
+                //is the attribute allowed
                 if (in_array($attributeName, $this->ignoredAttributes)) {
                     continue;
                 }
 
-                $attributeValue = $method->invoke($object);
+                $attributeValue = $this->getAttributeValue($object, $method, $attributeName);
 
-                if (array_key_exists($attributeName, $this->callbacks)) {
-                    $attributeValue = call_user_func($this->callbacks[$attributeName], $attributeValue);
-                }
-
-                if (null !== $attributeValue &&
-                    !is_scalar($attributeValue) &&
-                    !is_array($attributeValue) &&
-                    (get_class($attributeValue) !== 'DateTime')
-                ) {
-                    if (get_class($attributeValue) == 'Doctrine\ORM\PersistentCollection') {
+                // $attributeValue can be an array, a doctrine collection, an int , datetime, a string
+                if ($this->isDoctrineEntity($attributeValue)) {
+                    if ($this->isDoctrineCollection($attributeValue)) {
                         //memorize the list of persistent collections
-                        $attributeValues = $attributeValue;
-
-                        $attributeValue = array();
-                        foreach ($attributeValues as $obj) {
-                            if ($this->deepNormalization) {
-                                //the foreign entities are also normalized using the same conditions (think to ignored properties)
-                                $tempAttribute = $this->normalize($obj);
-                                $attributeValue[] = $tempAttribute;
-                            } else {
-                                //it is a simple normalization, we just look for the identifiers
-                                $attributeReflectionObject = new \ReflectionObject($obj);
-
-                                $identifiers = $this->doctrine->getManager()->getMetadataFactory()->getMetadataFor($attributeReflectionObject->getName())->getIdentifier();
-                                //the ids to add
-                                $tempAttribute = array();
-
-                                //we look for the multiple identifiers
-                                foreach ($identifiers as $identifier) {
-                                    $attribute = call_user_func(array($obj, 'get'.ucfirst($identifier)));
-                                    //the attribute is itself an object
-                                    if (is_object($attribute)) {
-                                        //we look for the ids
-                                        $attributeIdentifierReflectionObject = new \ReflectionObject($attribute);
-                                        $attributeIdentifiers = $this->doctrine->getManager()->getMetadataFactory()->getMetadataFor($attributeIdentifierReflectionObject->getName())->getIdentifier();
-
-                                        foreach ($attributeIdentifiers as $index => $attributeIdentifier) {
-                                            $attributeIdentifierAttribute = call_user_func(array($attribute, 'get'.ucfirst($attributeIdentifier)));//@todo use reflection to know the identifier
-                                            //we add each of the ids
-                                            $tempAttribute[$identifier] = $attributeIdentifierAttribute;
-                                        }
-                                    } else {
-                                        //we memorise the array of ids
-                                        $tempAttribute[$identifier] = $attribute;
-                                    }
-                                }
-
-                                //we add the id to the array of the attribute
-                                $attributeValue[] = $tempAttribute;
-                            }
-                        }
+                        $attributeValue = $this->normalizeDoctrineCollection($attributeValue);
                     } else {
-                        //@todo use reflection to know the identifier
-                        if (method_exists($attributeValue, 'getId')) {
-                            $attributeValue = $attributeValue->getId();
-                        }
+                        $attributeValue = $this->normalizeDoctrineEntity($attributeValue);
                     }
-                }
-
-                //if the attribute is an array
-                if (is_array($attributeValue)) {
-                    $tempAttributeValue = array();
-
-                    //we have to parse the content
-                    foreach ($attributeValue as $tempValue) {
-                        //to also normalize the objects
-                        if (is_object($tempValue)) {
-                            if ($this->deepNormalization) {
-                                $tempAttribute = $this->normalize($tempValue);
-                            } else {
-                                $tempAttribute = $tempValue->getId();
-                            }
-                        } else {
-                            $tempAttribute = $tempValue;
-                        }
-
-                        $tempAttributeValue[] = $tempAttribute;
-                    }
-
-                    //update the attribute value with the normalized array
-                    $attributeValue = $tempAttributeValue;
+                } else if (is_array($attributeValue)) {
+                    $attributeValue = $this->normalize($attributeValue);
                 }
 
                 //decamelize if requested the attribute name
@@ -216,7 +300,6 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
                 }
 
                 $attributes[$attributeName] = $attributeValue;
-
             }
         }
 
