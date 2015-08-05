@@ -16,7 +16,9 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
     var $doctrine = null;
     var $deepNormalization = false;
     var $watchDog = 0;//avoid infinite loop
+    var $watchDogLimit = 500;
     var $decamelize = false;
+    var $ignoredAttributes = array();
 
     /**
      * Constructor
@@ -47,13 +49,23 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
     }
 
     /**
-     * Set the watchdog
+     * Ignore some attributes
      *
-     * @param integer $watchDog
+     * @param array $ignoredAttributes
      */
-    public function setWatchDog($watchDog)
+    public function setIgnoredAttributes($ignoredAttributes)
     {
-        $this->watchDog = $watchDog;
+        $this->ignoredAttributes = $ignoredAttributes;
+    }
+
+    /**
+     * Set the watchdog limit
+     *
+     * @param integer $watchDogLimit
+     */
+    public function setWatchDogLimit($watchDogLimit)
+    {
+        $this->watchDogLimit = $watchDogLimit;
     }
 
     /**
@@ -134,10 +146,6 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
     protected function getAttributeValue($object, $method, $attributeName)
     {
         $attributeValue = $method->invoke($object);
-
-        if (array_key_exists($attributeName, $this->callbacks)) {
-            $attributeValue = call_user_func($this->callbacks[$attributeName], $attributeValue);
-        }
 
         return $attributeValue;
     }
@@ -344,7 +352,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
      */
     private function checkWatchDog()
     {
-        if ($this->watchDog >= 500) {
+        if ($this->watchDog >= $this->watchDogLimit) {
             throw new \Exception('The watchdog of '.$this->watchDog.' has been reached. There might be an infinite loop');
         }
         $this->watchDog++;
