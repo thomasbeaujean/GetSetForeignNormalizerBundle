@@ -53,7 +53,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
      *
      * @param array $ignoredAttributes
      */
-    public function setIgnoredAttributes($ignoredAttributes)
+    public function setIgnoredAttributes(array $ignoredAttributes)
     {
         $this->ignoredAttributes = $ignoredAttributes;
     }
