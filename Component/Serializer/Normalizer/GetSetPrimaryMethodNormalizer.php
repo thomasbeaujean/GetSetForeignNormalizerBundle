@@ -139,11 +139,11 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
 
     /**
      *
-     * @param unknown $object
-     * @param unknown $attributeName
-     * @return mixed
+     * @param Object $object
+     * @param string $method
+     * @return unknown
      */
-    protected function getAttributeValue($object, $method, $attributeName)
+    protected function getAttributeValue($object, $method)
     {
         $attributeValue = $method->invoke($object);
 
@@ -239,22 +239,45 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
 
     /**
      *
-     * @param unknown $entity
+     * @param Object $entity
      * @throws \Exception
      * @return multitype:\tbn\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer\multitype:multitype:mixed
      */
     protected function normalizeDoctrineEntity($entity)
     {
-        //@todo use reflection to know the identifier
         if ($this->deepNormalization) {
             //the foreign entities are also normalized using the same conditions (think to ignored properties)
             $attributeValue = $this->normalize($entity);
         } else {
-            if (method_exists($entity, 'getId')) {
-                $attributeValue = $entity->getId();
-            } else {
-                throw new \Exception('The normalizeDoctrineEntity did not work, there is a bug, the entity does not have a getId method');
+            $identifiers = $this->getIdentifiers(get_class($entity));
+
+            $identifierValues = array();
+            foreach ($identifiers as $identifier) {
+                $identifierValues[$identifier] = $this->getObjectAttribute($entity, $identifier);
             }
+
+            $attributeValue = $identifierValues;
+            unset($identifierValues);
+        }
+
+        return $attributeValue;
+    }
+
+    /**
+     *
+     * @param string $object
+     * @param string $attributeName
+     *
+     * @throws \Exception The object does not have the expected method
+     */
+    protected function getObjectAttribute($object, $attributeName)
+    {
+        $methodName = 'get'.ucfirst($attributeName);
+
+        if (method_exists($object, $methodName)) {
+            $attributeValue = call_user_func( array($object, $methodName));
+        } else {
+            throw new \Exception('The the entity does not have a '.$methodName.' method');
         }
 
         return $attributeValue;
@@ -289,7 +312,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
                     continue;
                 }
 
-                $attributeValue = $this->getAttributeValue($object, $method, $attributeName);
+                $attributeValue = $this->getAttributeValue($object, $method);
 
                 // $attributeValue can be an array, a doctrine collection, an int , datetime, a string
                 if ($this->isDoctrineEntity($attributeValue)) {
@@ -366,5 +389,29 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
     public function setDecamelize($decamelize)
     {
         $this->decamelize = $decamelize;
+    }
+
+    /**
+     *
+     * @param String $entityClass
+     * @return unknown
+     */
+    protected function getMetadata($entityClass)
+    {
+        $em = $this->doctrine->getEntityManager();
+        $meta = $em->getMetadataFactory()->getMetadataFor($entityClass);
+
+        return $meta;
+    }
+
+    /**
+     *
+     * @param String $itemNamespace
+     */
+    protected function getIdentifiers($entityClass)
+    {
+        $meta = $this->getMetadata($entityClass);
+
+        return $meta->identifier;
     }
 }
