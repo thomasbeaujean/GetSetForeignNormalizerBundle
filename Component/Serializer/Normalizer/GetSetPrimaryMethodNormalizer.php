@@ -181,11 +181,11 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
     {
         $isDoctrineCollection = false;
 
-        if (get_class($attribute) == 'Doctrine\ORM\PersistentCollection') {
+        if (get_class($attribute) === 'Doctrine\ORM\PersistentCollection') {
             $isDoctrineCollection = true;
         }
 
-        return $isDoctrineCollection = false;
+        return $isDoctrineCollection;
     }
 
     /**
@@ -195,6 +195,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
     protected function normalizeDoctrineCollection($collection)
     {
         $attributeValue = array();
+
         foreach ($collection as $obj) {
             if ($this->deepNormalization) {
                 //the foreign entities are also normalized using the same conditions (think to ignored properties)
@@ -252,7 +253,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
             if (method_exists($entity, 'getId')) {
                 $attributeValue = $entity->getId();
             } else {
-                throw new \Exception('The normalizeDoctrineEntity did not work, there is a bug');
+                throw new \Exception('The normalizeDoctrineEntity did not work, there is a bug, the entity does not have a getId method');
             }
         }
 
