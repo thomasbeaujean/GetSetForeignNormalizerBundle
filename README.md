@@ -19,6 +19,12 @@ You can normalize all entities using
 
 $normalizer->setDeepNormalization(true);
 ## Normalize some object
-$companyNormalized = $normalizer->normalize($company); //company is an doctrine entity
+$companyNormalized = $normalizer->normalize($company); //company is a doctrine entity
 
 
+# Configuration
+
+A watchdog is set to avoid infinite loop. You can ovverwrite this one using the configuration:
+
+		get_set_foreign_normalizer:
+				watchdog_limit: 5000 #default value

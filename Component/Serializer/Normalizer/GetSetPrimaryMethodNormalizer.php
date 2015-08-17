@@ -16,7 +16,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
     protected $doctrine = null;
     protected $deepNormalization = false;
     protected $watchDog = 0;//avoid infinite loop
-    protected $watchDogLimit = 500;
+    protected $watchDogLimit = 0;
     protected $decamelize = false;
     protected $ignoredAttributes = array();
     protected $normalizedEntities = array();
@@ -30,9 +30,10 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
      *
      * @return nothing
      */
-    public function __construct($doctrine)
+    public function __construct($doctrine, $watchDogLimit)
     {
         $this->doctrine = $doctrine;
+        $this->watchDogLimit = $watchDogLimit;
 
         if ($this->doctrine === null) {
             throw new \Exception('The class GetSetMethodForeignNormalizer needs the doctrine service in order to normalize, please give it to the constructor');

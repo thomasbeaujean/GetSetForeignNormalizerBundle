@@ -1,4 +1,6 @@
 services:
     get_set_foreign_normalizer:
         class: tbn\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer\GetSetPrimaryMethodNormalizer
-        arguments: ["@doctrine"]
+        arguments: 
+            - "@doctrine"
+            - "%tbn.get_set_foreign_normalizer.watchdog_limit%"

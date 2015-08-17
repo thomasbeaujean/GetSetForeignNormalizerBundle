@@ -29,6 +29,11 @@ class GetSetForeignNormalizerExtension extends Extension
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
+        //set all config as parameter
+        foreach ($config as $key => $value) {
+            $container->setParameter('tbn.get_set_foreign_normalizer.'.$key, $value);
+        }
+
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yml');
     }
