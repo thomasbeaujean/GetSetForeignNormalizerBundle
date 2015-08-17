@@ -13,12 +13,13 @@ use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
  */
 class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
 {
-    var $doctrine = null;
-    var $deepNormalization = false;
-    var $watchDog = 0;//avoid infinite loop
-    var $watchDogLimit = 500;
-    var $decamelize = false;
-    var $ignoredAttributes = array();
+    protected $doctrine = null;
+    protected $deepNormalization = false;
+    protected $watchDog = 0;//avoid infinite loop
+    protected $watchDogLimit = 500;
+    protected $decamelize = false;
+    protected $ignoredAttributes = array();
+    protected $normalizedEntities = array();
 
     /**
      * Constructor
@@ -104,6 +105,10 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
         //parse all data
         foreach ($data as $index => $row) {
             $normalizedData = $this->normalizeObject($row, $format, $context);
+
+            //reset the normalized entities to have the same list for all entities
+            $this->normalizedEntities = [];
+
             $normalized[$index] = $normalizedData;
         }
 
@@ -245,7 +250,16 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
      */
     protected function normalizeDoctrineEntity($entity)
     {
-        if ($this->deepNormalization) {
+        $deepNormalization = $this->deepNormalization;
+
+        //once the entities has been normalized, it wont be normalized twice to avoid infinite loops
+        if (in_array($entity, $this->normalizedEntities)) {
+            $deepNormalization = false;
+        } else {
+            $this->normalizedEntities[] = $entity;
+        }
+
+        if ($deepNormalization) {
             //the foreign entities are also normalized using the same conditions (think to ignored properties)
             $attributeValue = $this->normalize($entity);
         } else {
