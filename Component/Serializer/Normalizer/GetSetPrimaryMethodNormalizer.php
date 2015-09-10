@@ -2,8 +2,6 @@
 
 namespace tbn\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer;
 
-use Symfony\Component\Serializer\Exception\InvalidArgumentException;
-use Symfony\Component\Serializer\Exception\RuntimeException;
 use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
 
 /**
@@ -24,7 +22,8 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
     /**
      * Constructor
      *
-     * @param Doctrine $doctrine The doctrine service
+     * @param Doctrine $doctrine      The doctrine service
+     * @param int      $watchDogLimit The watchdog limit
      *
      * @throws \Exception
      *
@@ -51,6 +50,15 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
     }
 
     /**
+     *
+     * @param boolean $decamelize
+     */
+    public function setDecamelize($decamelize)
+    {
+        $this->decamelize = $decamelize;
+    }
+
+    /**
      * Ignore some attributes
      *
      * @param array $ignoredAttributes
@@ -73,7 +81,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
     /**
      * Convert an object using the getter of this one, and if it has some foreign relationship, we use also the id of the foreign objects
      *
-     * @param unknown $object  The object to convert
+     * @param unknown $data    The data to convert
      * @param string  $format  Not used here, keeped for compatibility
      * @param array   $context Not used here, keeped for compatibility
      *
@@ -93,7 +101,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
     /**
      * Convert an object using the getter of this one, and if it has some foreign relationship, we use also the id of the foreign objects
      *
-     * @param unknown $object  The object to convert
+     * @param unknown $data    The data to convert
      * @param string  $format  Not used here, keeped for compatibility
      * @param array   $context Not used here, keeped for compatibility
      *
@@ -290,7 +298,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
         $methodName = 'get'.ucfirst($attributeName);
 
         if (method_exists($object, $methodName)) {
-            $attributeValue = call_user_func( array($object, $methodName));
+            $attributeValue = call_user_func(array($object, $methodName));
         } else {
             throw new \Exception('The the entity does not have a '.$methodName.' method');
         }
@@ -317,9 +325,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
         $attributes = array();
 
         foreach ($methods as $method) {
-
             if ($this->isGetMethod($method)) {
-
                 $attributeName = $this->getMethodAttributeName($method);
 
                 //is the attribute allowed
@@ -359,10 +365,10 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
      * @param string $word
      * @return string Decamelized string
      */
-    function decamelize($word)
+    protected function decamelize($word)
     {
         return preg_replace_callback(
-            '/(^|[a-z])([A-Z])/',function ($matches) {
+            '/(^|[a-z])([A-Z])/', function ($matches) {
             return strtolower($matches[1].'_').strtolower($matches[2]);},
             $word
         );
@@ -375,7 +381,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
      *
      * @return Boolean whether the method is a getter.
      */
-    private function isGetMethod(\ReflectionMethod $method)
+    protected function isGetMethod(\ReflectionMethod $method)
     {
         return (
             0 === strpos($method->name, 'get') &&
@@ -389,7 +395,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
      *
      * @throws \Exception
      */
-    private function checkWatchDog()
+    protected function checkWatchDog()
     {
         if ($this->watchDog >= $this->watchDogLimit) {
             throw new \Exception('The watchdog of '.$this->watchDog.' has been reached. There might be an infinite loop');
@@ -399,16 +405,8 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
 
     /**
      *
-     * @param boolean $decamelize
-     */
-    public function setDecamelize($decamelize)
-    {
-        $this->decamelize = $decamelize;
-    }
-
-    /**
-     *
      * @param String $entityClass
+     *
      * @return unknown
      */
     protected function getMetadata($entityClass)
