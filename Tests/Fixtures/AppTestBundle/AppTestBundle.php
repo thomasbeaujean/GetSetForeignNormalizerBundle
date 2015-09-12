@@ -1,6 +1,6 @@
 <?php
 
-namespace tbn\GetSetForeignNormalizerBundle\GetSetForeignNormalizerBundle\Tests\Fixtures\AppTestBundle;
+namespace tbn\GetSetForeignNormalizerBundle\Tests\Fixtures\AppTestBundle;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 

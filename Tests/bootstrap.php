@@ -31,8 +31,8 @@ if (is_dir($buildDir = __DIR__.'/../build')) {
 
 include __DIR__.'/Fixtures/App/AppKernel.php';
 
-$application = new Application(new AppKernel('default_backend', true));
+$application = new Application(new AppKernel('test', true));
 $application->setAutoExit(false);
 
 
-unset($application);
+//unset($application);

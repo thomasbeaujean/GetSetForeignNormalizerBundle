@@ -21,9 +21,8 @@ class AppKernel extends Kernel
             new Doctrine\Bundle\DoctrineBundle\DoctrineBundle(),
             new Sensio\Bundle\FrameworkExtraBundle\SensioFrameworkExtraBundle(),
 
-
             new tbn\GetSetForeignNormalizerBundle\GetSetForeignNormalizerBundle(),
-            new tbn\GetSetForeignNormalizerBundle\GetSetForeignNormalizerBundle\Tests\Fixtures\AppTestBundle\AppTestBundle(),
+            new tbn\GetSetForeignNormalizerBundle\Tests\Fixtures\AppTestBundle\AppTestBundle(),
         );
     }
 

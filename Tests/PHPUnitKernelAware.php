@@ -2,12 +2,14 @@
 
 namespace tbn\GetSetForeignNormalizerBundle\Tests;
 
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+
 /**
  *
  * @author Thomas BEAUJEAN
  *
  */
-class PHPUnitKernelAware extends \PHPUnit_Framework_TestCase
+class PHPUnitKernelAware extends WebTestCase
 {
     /**
      *
@@ -15,9 +17,8 @@ class PHPUnitKernelAware extends \PHPUnit_Framework_TestCase
     public function setUp()
     {
         parent::setUp();
+        $this->bootKernel();
 
-        static::$kernel = static::createKernel();
-        static::$kernel->boot();
     }
 
     /**
@@ -101,12 +102,7 @@ class PHPUnitKernelAware extends \PHPUnit_Framework_TestCase
      */
     protected function getBootedKernel()
     {
-        $this->kernel = $this->createKernel();
 
-        if (!$this->kernel->isBooted()) {
-            $this->kernel->boot();
-        }
-
-        return $this->kernel;
+        return static::$kernel;
     }
 }

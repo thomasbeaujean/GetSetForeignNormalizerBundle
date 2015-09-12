@@ -1,6 +1,6 @@
 <?php
 
-namespace tbn\GetSetForeignNormalizerBundle\GetSetForeignNormalizerBundle\Tests\Fixtures\AppTestBundle\Entity\Traits;
+namespace tbn\GetSetForeignNormalizerBundle\Tests\Fixtures\AppTestBundle\Entity\Traits;
 
 use Doctrine\ORM\Mapping as ORM;
 

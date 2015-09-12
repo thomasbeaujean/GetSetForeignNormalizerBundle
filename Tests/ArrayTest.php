@@ -11,8 +11,13 @@ use tbn\GetSetForeignNormalizerBundle\Tests\PHPUnitKernelAware;
  */
 class ArrayTest extends PHPUnitKernelAware
 {
-    public function aaTest()
+    /**
+     *
+     */
+    public function testAa()
     {
-
+        $doctrine = $this->getDoctrine();
+        echo (get_class($doctrine));
+        $this->assertTrue(true);
     }
 }
