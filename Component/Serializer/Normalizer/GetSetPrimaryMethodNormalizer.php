@@ -107,7 +107,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
      *
      * @return multitype:multitype:multitype:mixed
      */
-    public function normalizeArray($data, $format = null, array $context = array())
+    protected function normalizeArray($data, $format = null, array $context = array())
     {
         $normalized = array();
 
@@ -165,21 +165,24 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
     }
 
     /**
-     * Is the attributeValue a doctrine entity or a doctrine collection
+     * Is the data a doctrine entity
      *
-     * @param $attributeValue
+     * @param unknown $data
+     *
      * @return boolean
      */
-    protected function isDoctrineEntity($attributeValue)
+    protected function isDoctrineEntity($data)
     {
         $isDoctrineEntity = false;
 
-        if (null !== $attributeValue &&
-            !is_scalar($attributeValue) &&
-            !is_array($attributeValue) &&
-            (get_class($attributeValue) !== 'DateTime')
+        if (null !== $data &&
+            !is_scalar($data) &&
+            !is_array($data)
         ) {
-            $isDoctrineEntity = true;
+            $className = get_class($data);
+            $doctrine = $this->doctrine;
+            $metadataFactory = $doctrine->getManager()->getMetadataFactory();
+            $isDoctrineEntity = $metadataFactory->hasMetadataFor($className);
         }
 
         return $isDoctrineEntity;
@@ -345,6 +348,8 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
                     }
                 } else if (is_array($attributeValue)) {
                     $attributeValue = $this->normalize($attributeValue);
+                } else if ($attributeValue instanceof \DateTime) {
+                    $attributeValue = $this->convertDateTime($attributeValue);
                 }
 
                 //decamelize if requested the attribute name
@@ -419,12 +424,24 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
 
     /**
      *
-     * @param String $itemNamespace
+     * @param String $entityClass
      */
     protected function getIdentifiers($entityClass)
     {
         $meta = $this->getMetadata($entityClass);
 
         return $meta->identifier;
+    }
+
+    /**
+     * Convernt a datetime into a string
+     *
+     * @param type $attributeValue
+     */
+    protected function convertDateTime(\Datetime $attributeValue)
+    {
+        $convertedDateTime = $attributeValue->format('Y-m-d H:i:s');
+
+        return $convertedDateTime;
     }
 }
