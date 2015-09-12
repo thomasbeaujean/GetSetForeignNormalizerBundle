@@ -1,0 +1,17 @@
+#dd
+0:
+    id: 1
+    name: name1
+    testSmallInt: ~
+    testInteger: ~
+    testBigint: ~
+    testFloat: ~
+    testBoolean: ~
+1:
+    id: 2
+    name: name2
+    testSmallInt: 2
+    testInteger: 78
+    testBigint: 4564
+    testFloat: 3.14
+    testBoolean: true

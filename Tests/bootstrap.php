@@ -34,5 +34,14 @@ include __DIR__.'/Fixtures/App/AppKernel.php';
 $application = new Application(new AppKernel('test', true));
 $application->setAutoExit(false);
 
+// Create database
+$input = new ArrayInput(array('command' => 'doctrine:database:create'));
+$application->run($input, new NullOutput());
+// Create database schema
+$input = new ArrayInput(array('command' => 'doctrine:schema:create'));
+$application->run($input, new NullOutput());
+// Load fixtures of the AppTestBundle
+$input = new ArrayInput(array('command' => 'doctrine:fixtures:load', '--no-interaction' => true, '--append' => true));
+$application->run($input, new NullOutput());
 
-//unset($application);
+unset($application, $input);

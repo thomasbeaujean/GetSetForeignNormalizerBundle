@@ -8,7 +8,6 @@ trait IdTrait
 {
     /**
      * @ORM\Id
-     * @ORM\GeneratedValue
      * @ORM\Column(type="integer",nullable=false)
      */
     protected $id;
