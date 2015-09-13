@@ -449,7 +449,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
      */
     protected function getMetadata($entityClass)
     {
-        $em = $this->doctrine->getEntityManager();
+        $em = $this->doctrine->getManager();
         $meta = $em->getMetadataFactory()->getMetadataFor($entityClass);
 
         return $meta;
