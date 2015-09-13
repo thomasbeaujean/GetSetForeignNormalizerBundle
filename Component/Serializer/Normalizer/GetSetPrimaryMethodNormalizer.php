@@ -87,9 +87,7 @@ class GetSetPrimaryMethodNormalizer
     /**
      * Convert an object using the getter of this one, and if it has some foreign relationship, we use also the id of the foreign objects
      *
-     * @param unknown $data    The data to convert
-     * @param string  $format  Not used here, keeped for compatibility
-     * @param array   $context Not used here, keeped for compatibility
+     * @param unknown $data The data to convert
      *
      * @return multitype:multitype:multitype:mixed
      */
@@ -229,34 +227,7 @@ class GetSetPrimaryMethodNormalizer
                 $attributeValue[] = $tempAttribute;
             } else {
                 //it is a simple normalization, we just look for the identifiers
-                $attributeReflectionObject = new \ReflectionObject($obj);
-
-                $identifiers = $this->doctrine->getManager()->getMetadataFactory()->getMetadataFor($attributeReflectionObject->getName())->getIdentifier();
-                //the ids to add
-                $tempAttribute = array();
-
-                //we look for the multiple identifiers
-                foreach ($identifiers as $identifier) {
-                    $attribute = call_user_func(array($obj, 'get'.ucfirst($identifier)));
-                    //the attribute is itself an object
-                    if (is_object($attribute)) {
-                        //we look for the ids
-                        $attributeIdentifierReflectionObject = new \ReflectionObject($attribute);
-                        $attributeIdentifiers = $this->doctrine->getManager()->getMetadataFactory()->getMetadataFor($attributeIdentifierReflectionObject->getName())->getIdentifier();
-
-                        foreach ($attributeIdentifiers as $index => $attributeIdentifier) {
-                            $attributeIdentifierAttribute = call_user_func(array($attribute, 'get'.ucfirst($attributeIdentifier)));//@todo use reflection to know the identifier
-                            //we add each of the ids
-                            $tempAttribute[$identifier] = $attributeIdentifierAttribute;
-                        }
-                    } else {
-                        //we memorise the array of ids
-                        $tempAttribute[$identifier] = $attribute;
-                    }
-                }
-
-                //we add the id to the array of the attribute
-                $attributeValue[] = $tempAttribute;
+                $attributeValue[] = $this->doctrineEntityIdentifierNormalizer->normalize($obj);
             }
         }
 

@@ -37,12 +37,14 @@ class GetterMethodNormalizerFactory
      *
      * @param type    $data
      * @param boolean $deepNormalization
+     * @param boolean $decamelize
      * @return type
      */
-    public function normalize($data, $deepNormalization = false)
+    public function normalize($data, $deepNormalization = false, $decamelize = false)
     {
         $normalizer = new GetSetPrimaryMethodNormalizer($this->doctrine, $this->watchDogLimit, $this->converterManager, $this->doctrineEntityIdentifierNormalizer);
         $normalizer->setDeepNormalization($deepNormalization);
+        $normalize->setDecamelize($decamelize);
 
         return $normalizer->normalize($data);
     }
