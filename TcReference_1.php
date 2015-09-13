@@ -36,21 +36,6 @@
     protected $testBlob;
 
     /**
-     * @ORM\Column(type="boolean", nullable=true)
-     */
-    protected $testBoolean;
-
-    /**
-     * @ORM\Column(type="date", nullable=true)
-     */
-    protected $testDate;
-
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
-    protected $testDatetime;
-
-    /**
      * @ORM\Column(type="datetimetz", nullable=true)
      */
     protected $testDatetimeTz;

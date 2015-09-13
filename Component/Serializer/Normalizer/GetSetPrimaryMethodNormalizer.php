@@ -2,6 +2,7 @@
 
 namespace tbn\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer;
 
+use tbn\GetSetForeignNormalizerBundle\Converter;
 use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
 
 /**
@@ -113,7 +114,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
 
         //parse all data
         foreach ($data as $index => $row) {
-            $normalizedData = $this->normalizeObject($row, $format, $context);
+            $normalizedData = $this->normalize($row, $format, $context);
 
             //reset the normalized entities to have the same list for all entities
             $this->normalizedEntities = [];
@@ -175,14 +176,17 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
     {
         $isDoctrineEntity = false;
 
-        if (null !== $data &&
-            !is_scalar($data) &&
-            !is_array($data)
-        ) {
+        if (is_object($data)) {
             $className = get_class($data);
             $doctrine = $this->doctrine;
             $metadataFactory = $doctrine->getManager()->getMetadataFactory();
-            $isDoctrineEntity = $metadataFactory->hasMetadataFor($className);
+
+            try {
+                $metadataFactory->getMetadataFor($className);
+                $isDoctrineEntity = true;
+            } catch (\Doctrine\Common\Persistence\Mapping\MappingException $ex) {
+                $isDoctrineEntity = false;
+            }
         }
 
         return $isDoctrineEntity;
@@ -325,6 +329,12 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
 
         $methods = $this->getObjectMethods($object);
 
+        if ($this->isDoctrineEntity($object)) {
+            $metadata = $this->getMetadata(get_class($object));
+            zdebug($metadata);
+            $fieldMappings = $metadata->fieldMappings;
+        }
+
         $attributes = array();
 
         foreach ($methods as $method) {
@@ -338,18 +348,41 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
 
                 $attributeValue = $this->getAttributeValue($object, $method);
 
-                // $attributeValue can be an array, a doctrine collection, an int , datetime, a string
-                if ($this->isDoctrineEntity($attributeValue)) {
-                    if ($this->isDoctrineCollection($attributeValue)) {
-                        //memorize the list of persistent collections
-                        $attributeValue = $this->normalizeDoctrineCollection($attributeValue);
-                    } else {
-                        $attributeValue = $this->normalizeDoctrineEntity($attributeValue);
+                if ($attributeValue !== null) {
+                    //a property
+                    if (isset($fieldMappings[$attributeName])) {
+                        $fieldMapping = $fieldMappings[$attributeName];
+                        $type = $fieldMapping['type'];
+
+                        $converterMapping = [
+                            'time' => new Converter\TimeConverter(),
+                            'boolean' => new Converter\BooleanConverter(),
+                            'integer' => new Converter\IntegerConverter(),
+                            'date' => new Converter\DateConverter(),
+                            'datetime' => new Converter\DatetimeConverter(),
+                        ];
+
+                        if (!isset($converterMapping[$type])) {
+                            throw new \Exception('The type '.$type.' has not converter set');
+                        }
+
+                        $converter = $converterMapping[$type];
+                        $attributeValue = $converter->convert($attributeValue);
                     }
-                } else if (is_array($attributeValue)) {
-                    $attributeValue = $this->normalize($attributeValue);
-                } else if ($attributeValue instanceof \DateTime) {
-                    $attributeValue = $this->convertDateTime($attributeValue);
+
+                    // $attributeValue can be an array, a doctrine collection, an int , datetime, a string
+                    if ($this->isDoctrineEntity($attributeValue)) {
+                        if ($this->isDoctrineCollection($attributeValue)) {
+                            //memorize the list of persistent collections
+                            $attributeValue = $this->normalizeDoctrineCollection($attributeValue);
+                        } else {
+                            $attributeValue = $this->normalizeDoctrineEntity($attributeValue);
+                        }
+                    } else if (is_array($attributeValue)) {
+                        $attributeValue = $this->normalize($attributeValue);
+                    } else if ($attributeValue instanceof \DateTime) {
+                        $attributeValue = $this->convertDateTime($attributeValue);
+                    }
                 }
 
                 //decamelize if requested the attribute name

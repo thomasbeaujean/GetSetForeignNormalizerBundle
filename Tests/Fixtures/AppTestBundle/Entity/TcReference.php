@@ -69,7 +69,55 @@ class TcReference
      */
     protected $testBoolean = null;
 
-    function getTestBoolean()
+
+    /**
+     * @ORM\Column(type="date", nullable=true)
+     */
+    protected $testDate;
+
+
+    /**
+     * @ORM\Column(type="time", nullable=true)
+     */
+    protected $testTime;
+
+
+    /**
+     * @ORM\Column(type="datetime", nullable=true)
+     */
+    protected $testDatetime;
+
+    function getTestDatetime()
+    {
+        return $this->testDatetime;
+    }
+
+    function setTestDatetime($testDatetime)
+    {
+        $this->testDatetime = $testDatetime;
+    }
+
+    function getTestTime()
+    {
+        return $this->testTime;
+    }
+
+    function setTestTime($testTime)
+    {
+        $this->testTime = $testTime;
+    }
+
+        function getTestDate()
+    {
+        return $this->testDate;
+    }
+
+    function setTestDate($testDate)
+    {
+        $this->testDate = $testDate;
+    }
+
+        function getTestBoolean()
     {
         return $this->testBoolean;
     }
