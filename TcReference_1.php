@@ -1,25 +1,4 @@
 
-
-    /**
-     * @ORM\Column(type="bigint", nullable=true)
-     */
-    protected $testBigint;
-
-    /**
-     * @ORM\Column(type="decimal", nullable=true)
-     */
-    protected $testDecimal;
-
-    /**
-     * @ORM\Column(type="string", nullable=true)
-     */
-    protected $testString;
-
-    /**
-     * @ORM\Column(type="text", nullable=true)
-     */
-    protected $testText;
-
     /**
      * @ORM\Column(type="guid", nullable=true)
      */
@@ -39,11 +18,6 @@
      * @ORM\Column(type="datetimetz", nullable=true)
      */
     protected $testDatetimeTz;
-
-    /**
-     * @ORM\Column(type="time", nullable=true)
-     */
-    protected $testTime;
 
     /**
      * @ORM\Column(type="dateinterval", nullable=true)

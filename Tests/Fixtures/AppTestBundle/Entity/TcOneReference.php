@@ -31,10 +31,10 @@ class TcOneReference
     /**
      * Set tcReference
      *
-     * @param \tbn\ApiGeneratorTestCaseBundle\Entity\TcReference $tcReference
+     * @param TcReference $tcReference
      * @return TcOneReference
      */
-    public function setTcReference(\tbn\ApiGeneratorTestCaseBundle\Entity\TcReference $tcReference = null)
+    public function setTcReference(TcReference $tcReference = null)
     {
         $this->tcReference = $tcReference;
 
@@ -44,7 +44,7 @@ class TcOneReference
     /**
      * Get tcReference
      *
-     * @return \tbn\ApiGeneratorTestCaseBundle\Entity\TcReference
+     * @return TcReference
      */
     public function getTcReference()
     {

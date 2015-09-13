@@ -1,48 +1,45 @@
 <?php
+
 namespace tbn\GetSetForeignNormalizerBundle\Tests\Fixtures\AppTestBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use tbn\GetSetForeignNormalizerBundle\Tests\Fixtures\AppTestBundle\Entity\Traits;
 
 /**
-* the doctrine mapping type:
-* http://doctrine-dbal.readthedocs.org/en/latest/reference/types.html
-*
-*   smallint
-*   integer
-*   bigint
-*   decimal
-*   float
-*   string
-*   text
-*   guid
-*   binary
-*   blob
-*   boolean
-*   date
-*   datetime
-*   datetimetz
-*   time
-*   dateinterval
-*   array
-*   simple_array
-*   json_array
-*   object
-*
-*/
+ * the doctrine mapping type:
+ * http://doctrine-dbal.readthedocs.org/en/latest/reference/types.html.
+ *
+ *   smallint
+ *   integer
+ *   bigint
+ *   decimal
+ *   float
+ *   string
+ *   text
+ *   guid
+ *   binary
+ *   blob
+ *   boolean
+ *   date
+ *   datetime
+ *   datetimetz
+ *   time
+ *   dateinterval
+ *   array
+ *   simple_array
+ *   json_array
+ *   object
+ */
 
 /**
- *
  * @author Thomas BEAUJEAN
  *
  * @ORM\Entity()
- *
  */
 class TcReference
 {
     use Traits\IdTrait;
     use Traits\NameTrait;
-
 
     /**
      * @ORM\Column(type="smallint", nullable=true)
@@ -59,7 +56,7 @@ class TcReference
      */
     protected $testBigint;
 
-        /**
+    /**
      * @ORM\Column(type="float", nullable=true)
      */
     protected $testFloat;
@@ -69,105 +66,162 @@ class TcReference
      */
     protected $testBoolean = null;
 
-
     /**
      * @ORM\Column(type="date", nullable=true)
      */
     protected $testDate;
-
 
     /**
      * @ORM\Column(type="time", nullable=true)
      */
     protected $testTime;
 
-
     /**
      * @ORM\Column(type="datetime", nullable=true)
      */
     protected $testDatetime;
 
-    function getTestDatetime()
+    /**
+     * @ORM\Column(type="decimal", nullable=true)
+     */
+    protected $testDecimal;
+
+
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     */
+    protected $testString;
+
+
+    /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    protected $testText;
+
+    /**
+     * @ORM\Column(type="array", nullable=true)
+     */
+    protected $testArray;
+
+    function getTestArray()
+    {
+        return $this->testArray;
+    }
+
+    function setTestArray($testArray)
+    {
+        $this->testArray = $testArray;
+    }
+
+
+    function getTestText()
+    {
+        return $this->testText;
+    }
+
+    function setTestText($testText)
+    {
+        $this->testText = $testText;
+    }
+
+
+    function getTestString()
+    {
+        return $this->testString;
+    }
+
+    function setTestString($testString)
+    {
+        $this->testString = $testString;
+    }
+
+        function getTestDecimal()
+    {
+        return $this->testDecimal;
+    }
+
+    function setTestDecimal($testDecimal)
+    {
+        $this->testDecimal = $testDecimal;
+    }
+
+
+    public function getTestDatetime()
     {
         return $this->testDatetime;
     }
 
-    function setTestDatetime($testDatetime)
+    public function setTestDatetime($testDatetime)
     {
         $this->testDatetime = $testDatetime;
     }
 
-    function getTestTime()
+    public function getTestTime()
     {
         return $this->testTime;
     }
 
-    function setTestTime($testTime)
+    public function setTestTime($testTime)
     {
         $this->testTime = $testTime;
     }
 
-        function getTestDate()
+    public function getTestDate()
     {
         return $this->testDate;
     }
 
-    function setTestDate($testDate)
+    public function setTestDate($testDate)
     {
         $this->testDate = $testDate;
     }
 
-        function getTestBoolean()
+    public function getTestBoolean()
     {
         return $this->testBoolean;
     }
 
-    function setTestBoolean($testBoolean)
+    public function setTestBoolean($testBoolean)
     {
         $this->testBoolean = $testBoolean;
     }
 
-
-    function getTestFloat()
+    public function getTestFloat()
     {
         return $this->testFloat;
     }
 
-    function setTestFloat($testFloat)
+    public function setTestFloat($testFloat)
     {
         $this->testFloat = $testFloat;
     }
 
-
-    function getTestSmallInt()
+    public function getTestSmallInt()
     {
         return $this->testSmallInt;
     }
 
-    function getTestInteger()
+    public function getTestInteger()
     {
         return $this->testInteger;
     }
 
-    function setTestSmallInt($testSmallInt)
+    public function setTestSmallInt($testSmallInt)
     {
         $this->testSmallInt = $testSmallInt;
     }
 
-    function setTestInteger($testInteger)
+    public function setTestInteger($testInteger)
     {
         $this->testInteger = $testInteger;
     }
-    function getTestBigint()
+    public function getTestBigint()
     {
         return $this->testBigint;
     }
 
-    function setTestBigint($testBigint)
+    public function setTestBigint($testBigint)
     {
         $this->testBigint = $testBigint;
     }
-
-
-
 }

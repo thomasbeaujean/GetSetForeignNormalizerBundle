@@ -101,12 +101,6 @@ class PHPUnitKernelAware extends WebTestCase
      */
     protected function getBootedKernel()
     {
-//        $this->kernel = $this->createKernel();
-//        if ( !$this->kernel->isBooted() )
-//        {
-//            $this->kernel->boot();
-//        }
-//        return $this->kernel;
         return static::$kernel;
     }
 }

@@ -2,7 +2,7 @@
 
 namespace tbn\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer;
 
-use tbn\GetSetForeignNormalizerBundle\Converter;
+use tbn\GetSetForeignNormalizerBundle\Converter\ConverterManager;
 use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
 
 /**
@@ -10,7 +10,7 @@ use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
  *
  * @author Thomas Beaujean
  */
-class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
+class GetSetPrimaryMethodNormalizer
 {
     protected $doctrine = null;
     protected $deepNormalization = false;
@@ -19,21 +19,26 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
     protected $decamelize = false;
     protected $ignoredAttributes = array();
     protected $normalizedEntities = array();
+    protected $converterManager = null;
+    protected $doctrineEntityIdentifierNormalizer = null;
 
     /**
      * Constructor
      *
-     * @param Doctrine $doctrine      The doctrine service
-     * @param int      $watchDogLimit The watchdog limit
+     * @param Doctrine         $doctrine         The doctrine service
+     * @param int              $watchDogLimit    The watchdog limit
+     * @param ConverterManager $converterManager
      *
      * @throws \Exception
      *
      * @return nothing
      */
-    public function __construct($doctrine, $watchDogLimit)
+    public function __construct($doctrine, $watchDogLimit, ConverterManager $converterManager, DoctrineEntityIdentifierNormalizer $doctrineEntityIdentifierNormalizer)
     {
         $this->doctrine = $doctrine;
         $this->watchDogLimit = $watchDogLimit;
+        $this->converterManager = $converterManager;
+        $this->doctrineEntityIdentifierNormalizer = $doctrineEntityIdentifierNormalizer;
 
         if ($this->doctrine === null) {
             throw new \Exception('The class GetSetMethodForeignNormalizer needs the doctrine service in order to normalize, please give it to the constructor');
@@ -88,12 +93,12 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
      *
      * @return multitype:multitype:multitype:mixed
      */
-    public function normalize($data, $format = null, array $context = array())
+    public function normalize($data)
     {
         if ($data instanceof \Traversable || is_array($data)) {
-            $normalized = $this->normalizeArray($data, $format, $context);
+            $normalized = $this->normalizeArray($data);
         } else {
-            $normalized = $this->normalizeObject($data, $format, $context);
+            $normalized = $this->normalizeObject($data);
         }
 
         return $normalized;
@@ -279,12 +284,7 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
             //the foreign entities are also normalized using the same conditions (think to ignored properties)
             $attributeValue = $this->normalize($entity);
         } else {
-            $identifiers = $this->getIdentifiers(get_class($entity));
-
-            $identifierValues = array();
-            foreach ($identifiers as $identifier) {
-                $identifierValues[$identifier] = $this->getObjectAttribute($entity, $identifier);
-            }
+            $identifierValues = $this->doctrineEntityIdentifierNormalizer->normalize($entity);
 
             $attributeValue = $identifierValues;
             unset($identifierValues);
@@ -331,8 +331,6 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
 
         if ($this->isDoctrineEntity($object)) {
             $metadata = $this->getMetadata(get_class($object));
-            zdebug($metadata);
-            $fieldMappings = $metadata->fieldMappings;
         }
 
         $attributes = array();
@@ -346,47 +344,9 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
                     continue;
                 }
 
-                $attributeValue = $this->getAttributeValue($object, $method);
+                $attributeValue = $this->getAttributeValueByMethod($object, $method, $metadata);
 
-                if ($attributeValue !== null) {
-                    //a property
-                    if (isset($fieldMappings[$attributeName])) {
-                        $fieldMapping = $fieldMappings[$attributeName];
-                        $type = $fieldMapping['type'];
-
-                        $converterMapping = [
-                            'time' => new Converter\TimeConverter(),
-                            'boolean' => new Converter\BooleanConverter(),
-                            'integer' => new Converter\IntegerConverter(),
-                            'date' => new Converter\DateConverter(),
-                            'datetime' => new Converter\DatetimeConverter(),
-                        ];
-
-                        if (!isset($converterMapping[$type])) {
-                            throw new \Exception('The type '.$type.' has not converter set');
-                        }
-
-                        $converter = $converterMapping[$type];
-                        $attributeValue = $converter->convert($attributeValue);
-                    }
-
-                    // $attributeValue can be an array, a doctrine collection, an int , datetime, a string
-                    if ($this->isDoctrineEntity($attributeValue)) {
-                        if ($this->isDoctrineCollection($attributeValue)) {
-                            //memorize the list of persistent collections
-                            $attributeValue = $this->normalizeDoctrineCollection($attributeValue);
-                        } else {
-                            $attributeValue = $this->normalizeDoctrineEntity($attributeValue);
-                        }
-                    } else if (is_array($attributeValue)) {
-                        $attributeValue = $this->normalize($attributeValue);
-                    } else if ($attributeValue instanceof \DateTime) {
-                        $attributeValue = $this->convertDateTime($attributeValue);
-                    }
-                }
-
-                //decamelize if requested the attribute name
-                if ($this->decamelize === true) {
+                if ($this->decamelize) {
                     $attributeName = $this->decamelize($attributeName);
                 }
 
@@ -395,6 +355,46 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
         }
 
         return $attributes;
+    }
+
+    /**
+     *
+     * @param type $object
+     * @param type $method
+     * @param type $fieldMappings
+     * @return type
+     */
+    protected function getAttributeValueByMethod($object, $method, $metadata)
+    {
+        $fieldMappings = $metadata->fieldMappings;
+        $associationMappings = $metadata->associationMappings;
+
+        $attributeName = $this->getMethodAttributeName($method);
+
+        $attributeValue = $this->getAttributeValue($object, $method);
+
+        if ($attributeValue !== null) {
+            //a property
+            if (isset($fieldMappings[$attributeName])) {
+                $fieldMapping = $fieldMappings[$attributeName];
+                $doctrineType = $fieldMapping['type'];
+                $attributeValue = $this->converterManager->convert($doctrineType, $attributeValue);
+            } else {
+                if ($this->isDoctrineCollection($attributeValue)) {
+                    //memorize the list of persistent collections
+                    $attributeValue = $this->normalizeDoctrineCollection($attributeValue);
+                } elseif ($this->isDoctrineEntity($object)) {
+                    $attributeValue = $this->normalizeDoctrineEntity($attributeValue);
+                } elseif (is_array($attributeValue)) {
+                    $attributeValue = $this->normalize($attributeValue);
+                } elseif ($attributeValue instanceof \DateTime) {
+                    $converter = new Converter\DatetimeConverter();
+                    $attributeValue = $converter->convert($attributeValue);
+                }
+            }
+        }
+
+        return $attributeValue;
     }
 
     /**
@@ -453,28 +453,5 @@ class GetSetPrimaryMethodNormalizer extends GetSetMethodNormalizer
         $meta = $em->getMetadataFactory()->getMetadataFor($entityClass);
 
         return $meta;
-    }
-
-    /**
-     *
-     * @param String $entityClass
-     */
-    protected function getIdentifiers($entityClass)
-    {
-        $meta = $this->getMetadata($entityClass);
-
-        return $meta->identifier;
-    }
-
-    /**
-     * Convernt a datetime into a string
-     *
-     * @param type $attributeValue
-     */
-    protected function convertDateTime(\Datetime $attributeValue)
-    {
-        $convertedDateTime = $attributeValue->format('Y-m-d H:i:s');
-
-        return $convertedDateTime;
     }
 }
