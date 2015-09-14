@@ -44,7 +44,7 @@ class GetterMethodNormalizerFactory
     {
         $normalizer = new GetSetPrimaryMethodNormalizer($this->doctrine, $this->watchDogLimit, $this->converterManager, $this->doctrineEntityIdentifierNormalizer);
         $normalizer->setDeepNormalization($deepNormalization);
-        $normalize->setDecamelize($decamelize);
+        $normalizer->setDecamelize($decamelize);
 
         return $normalizer->normalize($data);
     }
