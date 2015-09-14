@@ -1,6 +1,16 @@
 services:
-    get_set_foreign_normalizer:
-        class: tbn\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer\GetSetPrimaryMethodNormalizer
-        arguments: 
+    get_set_foreign_normalizer.normalizer.getter_method_normalizer_factory:
+        class: tbn\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer\GetterMethodNormalizerFactory
+        arguments:
             - "@doctrine"
-            - "%tbn.get_set_foreign_normalizer.watchdog_limit%"
+            - "@get_set_foreign_normalizer.converter.converter_manager"
+            - "@get_set_foreign_normalizer.service.doctrine_entity_identifier_normalizer"
+    get_set_foreign_normalizer:
+        alias: get_set_foreign_normalizer.normalizer.getter_method_normalizer_factory
+    get_set_foreign_normalizer.service.doctrine_entity_identifier_normalizer:
+        class: tbn\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer\DoctrineEntityIdentifierNormalizer
+        arguments:
+            - "@doctrine"
+            - "@get_set_foreign_normalizer.converter.converter_manager"
+    get_set_foreign_normalizer.converter.converter_manager:
+        class: tbn\GetSetForeignNormalizerBundle\Converter\ConverterManager
