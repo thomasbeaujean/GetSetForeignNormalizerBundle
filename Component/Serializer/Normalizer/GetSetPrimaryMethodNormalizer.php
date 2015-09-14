@@ -2,8 +2,9 @@
 
 namespace tbn\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer;
 
+use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use tbn\GetSetForeignNormalizerBundle\Converter\ConverterManager;
-use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
+use tbn\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer\Traits;
 
 /**
  * Converts between objects with getter and setter methods and arrays.
@@ -12,10 +13,9 @@ use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
  */
 class GetSetPrimaryMethodNormalizer
 {
+    use Traits\IsDoctrineEntityTrait;
     protected $doctrine = null;
     protected $deepNormalization = false;
-    protected $watchDog = 0;//avoid infinite loop
-    protected $watchDogLimit = 0;
     protected $decamelize = false;
     protected $ignoredAttributes = array();
     protected $normalizedEntities = array();
@@ -25,18 +25,16 @@ class GetSetPrimaryMethodNormalizer
     /**
      * Constructor
      *
-     * @param Doctrine         $doctrine         The doctrine service
-     * @param int              $watchDogLimit    The watchdog limit
-     * @param ConverterManager $converterManager
-     *
+     * @param Doctrine                           $doctrine                           The doctrine service
+     * @param ConverterManager                   $converterManager
+     * @param DoctrineEntityIdentifierNormalizer $doctrineEntityIdentifierNormalizer
      * @throws \Exception
      *
      * @return nothing
      */
-    public function __construct($doctrine, $watchDogLimit, ConverterManager $converterManager, DoctrineEntityIdentifierNormalizer $doctrineEntityIdentifierNormalizer)
+    public function __construct($doctrine, ConverterManager $converterManager, DoctrineEntityIdentifierNormalizer $doctrineEntityIdentifierNormalizer)
     {
         $this->doctrine = $doctrine;
-        $this->watchDogLimit = $watchDogLimit;
         $this->converterManager = $converterManager;
         $this->doctrineEntityIdentifierNormalizer = $doctrineEntityIdentifierNormalizer;
 
@@ -72,16 +70,6 @@ class GetSetPrimaryMethodNormalizer
     public function setIgnoredAttributes(array $ignoredAttributes)
     {
         $this->ignoredAttributes = $ignoredAttributes;
-    }
-
-    /**
-     * Set the watchdog limit
-     *
-     * @param integer $watchDogLimit
-     */
-    public function setWatchDogLimit($watchDogLimit)
-    {
-        $this->watchDogLimit = $watchDogLimit;
     }
 
     /**
@@ -169,33 +157,6 @@ class GetSetPrimaryMethodNormalizer
     }
 
     /**
-     * Is the data a doctrine entity
-     *
-     * @param unknown $data
-     *
-     * @return boolean
-     */
-    protected function isDoctrineEntity($data)
-    {
-        $isDoctrineEntity = false;
-
-        if (is_object($data)) {
-            $className = get_class($data);
-            $doctrine = $this->doctrine;
-            $metadataFactory = $doctrine->getManager()->getMetadataFactory();
-
-            try {
-                $metadataFactory->getMetadataFor($className);
-                $isDoctrineEntity = true;
-            } catch (\Doctrine\Common\Persistence\Mapping\MappingException $ex) {
-                $isDoctrineEntity = false;
-            }
-        }
-
-        return $isDoctrineEntity;
-    }
-
-    /**
      * Is the attribute a doctrine collection
      *
      * @param unknown $attribute
@@ -205,7 +166,7 @@ class GetSetPrimaryMethodNormalizer
     {
         $isDoctrineCollection = false;
 
-        if (get_class($attribute) === 'Doctrine\ORM\PersistentCollection') {
+        if (is_object($attribute) && get_class($attribute) === 'Doctrine\ORM\PersistentCollection') {
             $isDoctrineCollection = true;
         }
 
@@ -288,16 +249,11 @@ class GetSetPrimaryMethodNormalizer
      * Convert an object using the getter of this one, and if it has some foreign relationship, we use also the id of the foreign objects
      *
      * @param unknown $object  The object to convert
-     * @param string  $format  Not used here, keeped for compatibility
-     * @param array   $context Not used here, keeped for compatibility
      *
      * @return multitype:multitype:multitype:mixed
      */
-    public function normalizeObject($object, $format = null, array $context = array())
+    protected function normalizeObject($object)
     {
-        //check the watchdog
-        $this->checkWatchDog();
-
         $methods = $this->getObjectMethods($object);
 
         if ($this->isDoctrineEntity($object)) {
@@ -332,12 +288,13 @@ class GetSetPrimaryMethodNormalizer
      *
      * @param type $object
      * @param type $method
-     * @param type $fieldMappings
+     * @param type $metadata
      * @return type
      */
     protected function getAttributeValueByMethod($object, $method, $metadata)
     {
         $fieldMappings = $metadata->fieldMappings;
+
         $associationMappings = $metadata->associationMappings;
 
         $attributeName = $this->getMethodAttributeName($method);
@@ -350,13 +307,12 @@ class GetSetPrimaryMethodNormalizer
                 $fieldMapping = $fieldMappings[$attributeName];
                 $doctrineType = $fieldMapping['type'];
                 $attributeValue = $this->converterManager->convert($doctrineType, $attributeValue);
+            } elseif (isset($associationMappings[$attributeName])) {
+                $associationMapping = $associationMappings[$attributeName];
+                $associationType = $associationMapping['type'];
+                $attributeValue = $this->convertAssociationType($associationType, $attributeValue);
             } else {
-                if ($this->isDoctrineCollection($attributeValue)) {
-                    //memorize the list of persistent collections
-                    $attributeValue = $this->normalizeDoctrineCollection($attributeValue);
-                } elseif ($this->isDoctrineEntity($object)) {
-                    $attributeValue = $this->normalizeDoctrineEntity($attributeValue);
-                } elseif (is_array($attributeValue)) {
+                if (is_array($attributeValue)) { //the array must be tested before the is doctrine
                     $attributeValue = $this->normalize($attributeValue);
                 } elseif ($attributeValue instanceof \DateTime) {
                     $converter = new Converter\DatetimeConverter();
@@ -366,6 +322,31 @@ class GetSetPrimaryMethodNormalizer
         }
 
         return $attributeValue;
+    }
+
+    /**
+     *
+     * @param string  $associationType
+     * @param unknown $value
+     *
+     * @return unknown
+     */
+    protected function convertAssociationType($associationType, $value)
+    {
+        switch ($associationType) {
+            case ClassMetadataInfo::ONE_TO_ONE:
+            case ClassMetadataInfo::MANY_TO_ONE:
+            case ClassMetadataInfo::TO_ONE:
+                $convertedValue = $this->normalizeDoctrineEntity($value);
+                break;
+            case ClassMetadataInfo::ONE_TO_MANY:
+            case ClassMetadataInfo::MANY_TO_MANY:
+            case ClassMetadataInfo::TO_MANY:
+                $convertedValue = $this->normalizeDoctrineCollection($value);
+                break;
+        }
+
+        return $convertedValue;
     }
 
     /**
@@ -397,19 +378,6 @@ class GetSetPrimaryMethodNormalizer
             3 < strlen($method->name) &&
             0 === $method->getNumberOfRequiredParameters()
         );
-    }
-
-    /**
-     * Check if the watchdog was raised
-     *
-     * @throws \Exception
-     */
-    protected function checkWatchDog()
-    {
-        if ($this->watchDog >= $this->watchDogLimit) {
-            throw new \Exception('The watchdog of '.$this->watchDog.' has been reached. There might be an infinite loop');
-        }
-        $this->watchDog++;
     }
 
     /**

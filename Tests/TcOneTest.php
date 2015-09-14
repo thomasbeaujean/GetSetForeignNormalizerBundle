@@ -61,7 +61,6 @@ class TcOneTest extends PHPUnitKernelAware
         $normalizer = $this->getService('get_set_foreign_normalizer.normalizer.getter_method_normalizer_factory');
         $normalizedEntity = $normalizer->normalize($entity, true);
 
-        zdebug($normalizedEntity);
         $this->assertEquals($normalizedEntity[$field], $expectedValue);
     }
 }

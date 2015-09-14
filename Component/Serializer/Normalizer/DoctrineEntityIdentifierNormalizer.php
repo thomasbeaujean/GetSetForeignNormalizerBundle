@@ -2,6 +2,7 @@
 
 namespace tbn\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer;
 
+use tbn\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer\Traits;
 use tbn\GetSetForeignNormalizerBundle\Converter\ConverterManager;
 
 /**
@@ -12,6 +13,7 @@ use tbn\GetSetForeignNormalizerBundle\Converter\ConverterManager;
  */
 class DoctrineEntityIdentifierNormalizer
 {
+    use Traits\IsDoctrineEntityTrait;
     protected $doctrine = null;
     protected $converterManager = null;
 
@@ -116,32 +118,5 @@ class DoctrineEntityIdentifierNormalizer
         $meta = $this->getMetadata($entityClass);
 
         return $meta->identifier;
-    }
-
-    /**
-     * Is the data a doctrine entity
-     *
-     * @param unknown $data
-     *
-     * @return boolean
-     */
-    protected function isDoctrineEntity($data)
-    {
-        $isDoctrineEntity = false;
-
-        if (is_object($data)) {
-            $className = get_class($data);
-            $doctrine = $this->doctrine;
-            $metadataFactory = $doctrine->getManager()->getMetadataFactory();
-
-            try {
-                $metadataFactory->getMetadataFor($className);
-                $isDoctrineEntity = true;
-            } catch (\Doctrine\Common\Persistence\Mapping\MappingException $ex) {
-                $isDoctrineEntity = false;
-            }
-        }
-
-        return $isDoctrineEntity;
     }
 }

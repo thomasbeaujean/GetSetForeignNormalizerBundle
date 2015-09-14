@@ -57,7 +57,7 @@ class TcOneReference
      * @param \tbn\ApiGeneratorTestCaseBundle\Entity\TcManyReference $tcManyReference
      * @return TcOneReference
      */
-    public function setTcManyReference(\tbn\ApiGeneratorTestCaseBundle\Entity\TcManyReference $tcManyReference = null)
+    public function setTcManyReference(TcManyReference $tcManyReference = null)
     {
         $this->tcManyReference = $tcManyReference;
 

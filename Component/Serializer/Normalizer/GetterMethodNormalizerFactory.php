@@ -13,18 +13,17 @@ class GetterMethodNormalizerFactory
     /**
      * Constructor
      *
-     * @param Doctrine         $doctrine         The doctrine service
-     * @param int              $watchDogLimit    The watchdog limit
-     * @param ConverterManager $converterManager
+     * @param Doctrine                           $doctrine                           The doctrine service
+     * @param ConverterManager                   $converterManager
+     * @param DoctrineEntityIdentifierNormalizer $doctrineEntityIdentifierNormalizer
      *
      * @throws \Exception
      *
      * @return nothing
      */
-    public function __construct($doctrine, $watchDogLimit, ConverterManager $converterManager, DoctrineEntityIdentifierNormalizer $doctrineEntityIdentifierNormalizer)
+    public function __construct($doctrine, ConverterManager $converterManager, DoctrineEntityIdentifierNormalizer $doctrineEntityIdentifierNormalizer)
     {
         $this->doctrine = $doctrine;
-        $this->watchDogLimit = $watchDogLimit;
         $this->converterManager = $converterManager;
         $this->doctrineEntityIdentifierNormalizer = $doctrineEntityIdentifierNormalizer;
 
@@ -38,13 +37,15 @@ class GetterMethodNormalizerFactory
      * @param type    $data
      * @param boolean $deepNormalization
      * @param boolean $decamelize
+     * @param array   $ignoredAttributes
      * @return type
      */
-    public function normalize($data, $deepNormalization = false, $decamelize = false)
+    public function normalize($data, $deepNormalization = false, $decamelize = false, $ignoredAttributes = [])
     {
-        $normalizer = new GetSetPrimaryMethodNormalizer($this->doctrine, $this->watchDogLimit, $this->converterManager, $this->doctrineEntityIdentifierNormalizer);
+        $normalizer = new GetSetPrimaryMethodNormalizer($this->doctrine, $this->converterManager, $this->doctrineEntityIdentifierNormalizer);
         $normalizer->setDeepNormalization($deepNormalization);
         $normalizer->setDecamelize($decamelize);
+        $normalizer->setIgnoredAttributes($ignoredAttributes);
 
         return $normalizer->normalize($data);
     }

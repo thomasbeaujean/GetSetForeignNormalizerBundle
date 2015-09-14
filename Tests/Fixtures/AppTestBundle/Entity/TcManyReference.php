@@ -1,6 +1,7 @@
 <?php
 namespace tbn\GetSetForeignNormalizerBundle\Tests\Fixtures\AppTestBundle\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use tbn\GetSetForeignNormalizerBundle\Tests\Fixtures\AppTestBundle\Entity\Traits;
 
@@ -26,7 +27,7 @@ class TcManyReference
      */
     public function __construct()
     {
-        $this->tcOneReferences = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->tcOneReferences = [];
     }
 
     /**
@@ -35,8 +36,9 @@ class TcManyReference
      * @param \tbn\ApiGeneratorTestCaseBundle\Entity\TcOneReference $tcOneReferences
      * @return TcManyReference
      */
-    public function addTcOneReference(\tbn\ApiGeneratorTestCaseBundle\Entity\TcOneReference $tcOneReferences)
+    public function addTcOneReference(TcOneReference $tcOneReferences)
     {
+        $tcOneReferences->setTcManyReference($this);
         $this->tcOneReferences[] = $tcOneReferences;
 
         return $this;
@@ -47,7 +49,7 @@ class TcManyReference
      *
      * @param \tbn\ApiGeneratorTestCaseBundle\Entity\TcOneReference $tcOneReferences
      */
-    public function removeTcOneReference(\tbn\ApiGeneratorTestCaseBundle\Entity\TcOneReference $tcOneReferences)
+    public function removeTcOneReference(TcOneReference $tcOneReferences)
     {
         $this->tcOneReferences->removeElement($tcOneReferences);
     }
