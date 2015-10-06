@@ -27,7 +27,7 @@ trait IsDoctrineEntityTrait
             try {
                 $metadataFactory->getMetadataFor($className);
                 $isDoctrineEntity = true;
-            } catch (\Doctrine\Common\Persistence\Mapping\MappingException $ex) {
+            } catch (\Doctrine\ORM\Mapping\MappingException $ex) {
                 $isDoctrineEntity = false;
             }
         }

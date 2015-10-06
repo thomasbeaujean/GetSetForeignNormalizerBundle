@@ -256,7 +256,8 @@ class GetSetPrimaryMethodNormalizer
     {
         $methods = $this->getObjectMethods($object);
 
-        if ($this->isDoctrineEntity($object)) {
+        $isDoctrineEntity = $this->isDoctrineEntity($object);
+        if ($isDoctrineEntity) {
             $metadata = $this->getMetadata(get_class($object));
         }
 
@@ -271,7 +272,18 @@ class GetSetPrimaryMethodNormalizer
                     continue;
                 }
 
-                $attributeValue = $this->getAttributeValueByMethod($object, $method, $metadata);
+                if ($isDoctrineEntity) {
+                    $attributeValue = $this->getAttributeValueByMethod($object, $method, $metadata);
+                } else {
+                    $rawValue = $this->getAttributeValue($object, $method);
+                    if (is_object($rawValue)) {
+                        $attributeValue = $this->normalizeObject($rawValue);
+                    } elseif (is_array($rawValue)) {
+                        $attributeValue = $this->normalizeArray($rawValue);
+                    } else {
+                        $attributeValue = $rawValue;
+                    }
+                }
 
                 if ($this->decamelize) {
                     $attributeName = $this->decamelize($attributeName);
