@@ -17,4 +17,14 @@ class DefaultConverter implements ConverterInterface
     {
         return $rawValue;
     }
+
+    /**
+     * Revert the value
+     * @param string $rawValue
+     * @return string
+     */
+    public function revert($rawValue)
+    {
+        return $rawValue;
+    }
 }

@@ -3,22 +3,17 @@
 namespace tbn\GetSetForeignNormalizerBundle\Converter;
 
 /**
- * Description of IntegerConverter
  *
  * @author Thomas BEAUJEAN
  */
-class DateConverter implements ConverterInterface
+class DateConverter extends AbstractDatetimeConverter
 {
     /**
-     *
-     * @param type $rawValue
-     *
-     * @return string The converted value
+     * Get the format
+     * @return string
      */
-    public function convert($rawValue)
+    protected function getFormat()
     {
-        $convertedValue = $rawValue->format('Y-m-d');
-
-        return $convertedValue;
+        return 'Y-m-d';
     }
 }

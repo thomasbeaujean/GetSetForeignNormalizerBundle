@@ -6,18 +6,14 @@ namespace tbn\GetSetForeignNormalizerBundle\Converter;
  *
  * @author Thomas BEAUJEAN
  */
-class TimeConverter implements ConverterInterface
+class TimeConverter extends AbstractDatetimeConverter
 {
     /**
-     *
-     * @param type $rawValue
-     *
-     * @return string The converted value
+     * Get the format
+     * @return string
      */
-    public function convert($rawValue)
+    protected function getFormat()
     {
-        $convertedValue = $rawValue->format('H:i:s');
-
-        return $convertedValue;
+        return 'H:i:s';
     }
 }
