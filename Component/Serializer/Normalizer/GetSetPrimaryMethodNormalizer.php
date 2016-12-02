@@ -83,8 +83,10 @@ class GetSetPrimaryMethodNormalizer
     {
         if ($data instanceof \Traversable || is_array($data)) {
             $normalized = $this->normalizeArray($data);
-        } else {
+        } elseif (is_object($data)) {
             $normalized = $this->normalizeObject($data);
+        } else {
+            $normalized = $data;
         }
 
         return $normalized;
