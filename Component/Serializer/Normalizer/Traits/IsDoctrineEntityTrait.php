@@ -29,6 +29,8 @@ trait IsDoctrineEntityTrait
                 $isDoctrineEntity = true;
             } catch (\Doctrine\ORM\Mapping\MappingException $ex) {
                 $isDoctrineEntity = false;
+            } catch (\Doctrine\Common\Persistence\Mapping\MappingException $ex) {
+                $isDoctrineEntity = false;
             }
         }
 
