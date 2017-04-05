@@ -5,6 +5,7 @@ namespace tbn\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use tbn\GetSetForeignNormalizerBundle\Converter\ConverterManager;
 use tbn\GetSetForeignNormalizerBundle\Component\Serializer\Normalizer\Traits;
+use tbn\GetSetForeignNormalizerBundle\Converter;
 
 /**
  * Converts between objects with getter and setter methods and arrays.
