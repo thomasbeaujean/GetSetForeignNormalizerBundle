@@ -20,10 +20,6 @@ class Configuration implements ConfigurationInterface
      */
     public function getConfigTreeBuilder()
     {
-        $treeBuilder = new TreeBuilder();
-
-        $treeBuilder->root('get_set_foreign_normalizer');
-
-        return $treeBuilder;
+        return new TreeBuilder('get_set_foreign_normalizer');
     }
 }
