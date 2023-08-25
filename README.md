@@ -1,6 +1,8 @@
 GetSetForeignNormalizerBundle
 =============================
 
+DEPRECATED: This bundle is not usefull anymore, use Symfony serializer/normalizer instead
+
 This bundle gives a service that permits to normalize a doctrine entity.
 
 The entity is normalized and the ids of the foreign entities of the entity are also normalized.
